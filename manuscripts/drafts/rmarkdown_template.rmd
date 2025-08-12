@@ -39,7 +39,7 @@ knitr::opts_chunk$set(
 )
 
 # Load analysis framework
-source("cuneiform_analysis_framework.R")
+# source("cuneiform_analysis_framework.R")
 
 # Initialize bibliography
 library(RefManageR)

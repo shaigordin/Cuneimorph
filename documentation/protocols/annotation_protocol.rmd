@@ -1,0 +1,81 @@
+# Cuneiform Sign Landmark Annotation Protocol
+
+## Theoretical Framework
+
+### Geometric Morphometric Principles in Paleographic Context
+The adaptation of geometric morphometrics from evolutionary biology to cuneiform paleography requires careful consideration of the fundamental differences between biological specimens and cultural artifacts. While biological landmarks represent homologous structures across taxa, cuneiform landmarks must account for scribal intentionality, cultural transmission patterns, and technological constraints of stylus manipulation.
+
+### Landmark Classification System
+
+#### Type I Landmarks: Structural Intersections
+- **Wedge termination points**: Discrete endpoints of individual stroke elements
+- **Stroke intersection nodes**: Points where multiple wedge strokes converge
+- **Angular vertices**: Sharp directional changes within stroke sequences
+
+#### Type II Landmarks: Extremal Points
+- **Maximal extension points**: Furthest projection of wedge heads in primary orientations
+- **Stroke width maxima**: Points of greatest thickness variation within individual strokes
+- **Compositional boundaries**: Peripheral limits of complex sign configurations
+
+#### Type III Landmarks: Constructed Points
+- **Centroid calculations**: Geometric center points of multi-component signs
+- **Proportional divisions**: Standardized fractional points along stroke lengths
+- **Angular bisectors**: Constructed reference points for measuring stroke relationships
+
+## Annotation Methodology
+
+### Image Preparation Standards
+1. **Resolution Requirements**: Minimum 300 DPI for detailed morphometric analysis
+2. **Contrast Enhancement**: Systematic adjustment protocols for varying photographic conditions
+3. **Scale Calibration**: Consistent measurement standards across different publication sources
+4. **Orientation Normalization**: Standardized rotation protocols for comparative analysis
+
+### Quality Control Measures
+
+#### Inter-observer Reliability Protocols
+```
+Annotation Consistency Index (ACI) = 
+Σ(landmark_distance_variation) / total_landmarks
+
+Target ACI: < 0.05 for acceptable precision
+```
+
+#### Systematic Error Detection
+- **Temporal consistency**: Re-annotation of subset after intervals
+- **Cross-validation**: Independent annotation by multiple researchers
+- **Statistical outlier identification**: Automatic detection of anomalous measurements
+
+### Data Structure Specifications
+
+#### Primary Data Format
+```
+SignID | ArchiveName | Period | ScribeID | LandmarkX | LandmarkY | LandmarkType | ConfidenceScore
+CUN001 | Hattusa     | MH     | Unknown  | 23.4      | 156.7     | Termination  | 0.95
+CUN001 | Hattusa     | MH     | Unknown  | 45.2      | 143.1     | Intersection | 0.88
+```
+
+#### Metadata Integration
+- **Prosopographic linking**: Connection to known scribal identities where available
+- **Contextual classification**: Administrative, literary, legal document types
+- **Temporal precision**: Absolute and relative chronological positioning
+- **Spatial provenance**: Archaeological context and archival associations
+
+## Paleographic Standardization Challenges
+
+### Multi-period Comparative Framework
+The diachronic nature of the analysis necessitates careful consideration of evolutionary changes in sign forms across different historical periods. Old Assyrian ductus characteristics differ substantially from Middle Assyrian paleographic conventions, requiring period-specific normalization procedures while maintaining comparative analytical capacity.
+
+### Regional Variation Integration
+Peripheral Akkadian corpora present unique challenges for standardization, as local scribal traditions often incorporate indigenous paleographic elements. The Hattusa archive, for instance, demonstrates Hittite scribal influence on Akkadian sign formation, while Ugaritic Akkadian exhibits Canaanite paleographic interference patterns.
+
+### Statistical Validation Requirements
+```r
+# Landmark precision assessment
+landmark_variance <- function(annotations) {
+  mean_positions <- aggregate(annotations[,c("X","Y")], 
+                             by=list(annotations$SignID), FUN=mean)
+  variance_scores <- aggregate(annotations[,c("X","Y")], 
+                              by=list(annotations$SignID), FUN=var)
+  return(list(means = mean_positions, variances = variance_scores))
+}
+```

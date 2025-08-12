@@ -1,0 +1,70 @@
+# Zotero Bibliography Management Workflow
+
+## Collection Structure
+
+### Primary Collections
+- **Core Methodology**
+  - Geometric Morphometrics
+  - Computational Paleography
+  - Image Recognition Techniques
+  - Statistical Analysis Methods
+
+- **Cuneiform Studies**
+  - Assyriology General
+  - Paleographic Studies
+  - Scribal Education
+  - Literacy Studies Ancient Near East
+
+- **Regional Corpora**
+  - Mesopotamian Archives
+    - Old Assyrian
+    - Middle Assyrian
+    - Neo-Assyrian
+  - Peripheral Akkadian
+    - Hattusa Archives
+    - Ugarit Corpus
+    - Alalakh Tablets
+    - Canaanite Akkadian
+
+### Citation Key Conventions
+- Format: `Author_Year_KeyWord`
+- Examples: 
+  - `Devecchi_2015_CuneiformPaleography`
+  - `Mikulinsky_2025_ProtoSnap`
+  - `Okumura_2019_GeometricMorphometrics`
+
+## Reference Management Protocol
+
+### Import Procedures
+1. **Academic Databases**: Direct import via Zotero connector
+2. **Archaeological Publications**: Manual entry with complete metadata
+3. **Conference Proceedings**: Special attention to venue and presentation context
+4. **Digital Corpora**: Include access dates and database versions
+
+### Metadata Standards
+- **Title**: Full title in original language where applicable
+- **Publication Type**: Distinguish between journal articles, conference proceedings, monographs
+- **Tags**: Systematic tagging by methodology, period, region, sign types
+- **Notes**: Include relevance to current project and key methodological insights
+
+### Bibliography Export Configuration
+- **Citation Style**: Chicago Manual of Style 17th edition (Author-Date)
+- **Export Format**: Better BibTeX for R integration
+- **File Organization**: Separate .bib files for different manuscript sections
+
+## Integration with R Workflow
+
+### Automatic Citation Integration
+```r
+# Load bibliography
+library(RefManageR)
+bib <- ReadBib("cuneiform_analysis.bib")
+
+# Cite in R Markdown
+# Use syntax: `r Cite(bib, "Devecchi_2015_CuneiformPaleography")`
+```
+
+### Systematic Reference Tracking
+- Track which sources inform specific analytical decisions
+- Maintain citation consistency across multiple manuscripts
+- Generate automated reference lists for different publication targets

@@ -37,8 +37,16 @@ shapes <- readShapes(shape_files)
 
 # ===== STEP 2: Prepare Array =====
 cat("Preparing data array...\n")
-# Extract landmarks
-landmarks <- shapes$landmarks.scaled
+# Extract landmarks (use pixel if scaled not available)
+if (!is.null(shapes$landmarks.scaled) && length(shapes$landmarks.scaled) > 0) {
+  landmarks <- shapes$landmarks.scaled
+  cat("Using scaled landmark coordinates\n")
+} else if (!is.null(shapes$landmarks.pixel) && length(shapes$landmarks.pixel) > 0) {
+  landmarks <- shapes$landmarks.pixel
+  cat("Using pixel landmark coordinates (no scaling info available)\n")
+} else {
+  stop("No landmark data found in shape files!")
+}
 
 # Convert to array (p x k x n format: landmarks x dimensions x specimens)
 n_lm <- nrow(landmarks[[1]])   # number of landmarks

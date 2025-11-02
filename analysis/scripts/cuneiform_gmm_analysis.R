@@ -61,8 +61,18 @@ cat("Files:", basename(shape_files), "\n\n")
 # Read all shapes using StereoMorph
 shapes_data <- readShapes(shape_files)
 
-# Extract landmark coordinates (scaled version)
-landmarks_list <- shapes_data$landmarks.scaled
+# Extract landmark coordinates (scaled or pixel version)
+if (!is.null(shapes_data$landmarks.scaled) && length(shapes_data$landmarks.scaled) > 0) {
+  landmarks_list <- shapes_data$landmarks.scaled
+  cat("Using scaled landmark coordinates\n")
+} else if (!is.null(shapes_data$landmarks.pixel) && length(shapes_data$landmarks.pixel) > 0) {
+  landmarks_list <- shapes_data$landmarks.pixel
+  cat("Using pixel landmark coordinates (no scaling information available)\n")
+  cat("Note: Procrustes analysis will remove scale anyway\n")
+} else {
+  stop("ERROR: No landmark data found in shape files!\n",
+       "Check that your .txt files contain <landmarks.pixel> or <landmarks.scaled> sections.")
+}
 
 # Check dimensions
 cat("Landmarks per specimen:", sapply(landmarks_list, nrow), "\n")

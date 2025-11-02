@@ -33,7 +33,13 @@ cat("\n")
 # ===== STEP 1: Read Data =====
 cat("Reading landmark data...\n")
 shape_files <- list.files("data/shapes", pattern = "\\.txt$", full.names = TRUE)
+cat("DEBUG: Found", length(shape_files), "shape files\n")
 shapes <- readShapes(shape_files)
+
+# DEBUG: Check what readShapes returned
+cat("DEBUG: Names in shapes object:", paste(names(shapes), collapse = ", "), "\n")
+cat("DEBUG: Structure of shapes object:\n")
+str(shapes, max.level = 2)
 
 # ===== STEP 2: Prepare Array =====
 cat("Preparing data array...\n")
@@ -51,6 +57,14 @@ if (!is.null(shapes$landmarks.scaled) && length(shapes$landmarks.scaled) > 0) {
 # Convert to array (p x k x n format: landmarks x dimensions x specimens)
 n_spec <- length(landmarks)    # number of specimens
 
+# DEBUG: Check what we actually got
+cat("DEBUG: Number of specimens in list:", n_spec, "\n")
+cat("DEBUG: Class of first element:", class(landmarks[[1]]), "\n")
+if (n_spec > 0) {
+  cat("DEBUG: Structure of first landmark set:\n")
+  str(landmarks[[1]])
+}
+
 # Ensure each landmark set is a proper matrix
 landmarks <- lapply(landmarks, function(x) {
   if (!is.matrix(x)) {
@@ -60,8 +74,13 @@ landmarks <- lapply(landmarks, function(x) {
 })
 
 # Get dimensions from first specimen
-n_lm <- nrow(landmarks[[1]])   # number of landmarks
-n_dim <- ncol(landmarks[[1]])  # dimensions (2 for 2D)
+if (n_spec > 0 && !is.null(landmarks[[1]])) {
+  n_lm <- nrow(landmarks[[1]])   # number of landmarks
+  n_dim <- ncol(landmarks[[1]])  # dimensions (2 for 2D)
+  cat("DEBUG: After matrix conversion - dimensions:", n_lm, "x", n_dim, "\n")
+} else {
+  stop("No valid landmark data found!")
+}
 
 cat("Array dimensions: ", n_lm, " landmarks x ", n_dim, " dimensions x ", n_spec, " specimens\n")
 

@@ -63,10 +63,10 @@ shapes_data <- readShapes(shape_files)
 
 # Extract landmark coordinates (scaled or pixel version)
 if (!is.null(shapes_data$landmarks.scaled) && length(shapes_data$landmarks.scaled) > 0) {
-  landmarks_list <- shapes_data$landmarks.scaled
+  landmarks_data <- shapes_data$landmarks.scaled
   cat("Using scaled landmark coordinates\n")
 } else if (!is.null(shapes_data$landmarks.pixel) && length(shapes_data$landmarks.pixel) > 0) {
-  landmarks_list <- shapes_data$landmarks.pixel
+  landmarks_data <- shapes_data$landmarks.pixel
   cat("Using pixel landmark coordinates (no scaling information available)\n")
   cat("Note: Procrustes analysis will remove scale anyway\n")
 } else {
@@ -74,58 +74,80 @@ if (!is.null(shapes_data$landmarks.scaled) && length(shapes_data$landmarks.scale
        "Check that your .txt files contain <landmarks.pixel> or <landmarks.scaled> sections.")
 }
 
-# Check dimensions
-cat("Landmarks per specimen:", sapply(landmarks_list, nrow), "\n")
-cat("Coordinates per landmark: 2 (X, Y)\n\n")
-
 # ============================================================================
 # 2. DATA PREPARATION
 # ============================================================================
 
 cat("Step 2: Preparing data for analysis...\n")
 
-# Ensure all landmark sets are proper matrices
-landmarks_list <- lapply(landmarks_list, function(x) {
-  if (!is.matrix(x)) {
-    x <- as.matrix(x)
-  }
-  return(x)
-})
-
-# Determine number of landmarks (should be consistent)
-n_landmarks <- nrow(landmarks_list[[1]])
-n_dim <- 2  # 2D data (X, Y)
-n_specimens <- length(landmarks_list)
-
 # Create specimen names from file names
 specimen_names <- basename(shape_files)
 specimen_names <- gsub(".txt$", "", specimen_names)
 
-cat(paste("Number of specimens:", n_specimens, "\n"))
-cat(paste("Number of landmarks:", n_landmarks, "\n"))
-cat(paste("Dimensions:", n_dim, "(2D)\n\n"))
+# Check if landmarks_data is already an array (which is the case with readShapes output)
+if (is.array(landmarks_data) && length(dim(landmarks_data)) == 3) {
+  # Already in correct format (landmarks x dimensions x specimens)
+  landmark_array <- landmarks_data
+  n_landmarks <- dim(landmark_array)[1]
+  n_dim <- dim(landmark_array)[2]
+  n_specimens <- dim(landmark_array)[3]
 
-# Convert list to 3D array for geomorph
-# Array format: (landmarks x dimensions x specimens)
-landmark_array <- array(NA, dim = c(n_landmarks, n_dim, n_specimens),
-                       dimnames = list(
-                         rownames(landmarks_list[[1]]),  # landmark names
-                         c("X", "Y"),                     # coordinate names
-                         specimen_names                   # specimen names
-                       ))
+  cat("Data already in array format\n")
+  cat(paste("Number of specimens:", n_specimens, "\n"))
+  cat(paste("Number of landmarks:", n_landmarks, "\n"))
+  cat(paste("Dimensions:", n_dim, "(2D)\n\n"))
 
-# Fill the array with error checking
-for (i in 1:n_specimens) {
-  lm_matrix <- as.matrix(landmarks_list[[i]])
+  # Set dimension names
+  dimnames(landmark_array) <- list(
+    dimnames(landmark_array)[[1]],  # keep landmark names if present
+    c("X", "Y"),                      # coordinate names
+    specimen_names                    # specimen names
+  )
 
-  # Verify dimensions
-  if (nrow(lm_matrix) != n_landmarks || ncol(lm_matrix) != n_dim) {
-    stop(paste("ERROR: Dimension mismatch for specimen", i, "(",specimen_names[i], ")",
-               "\nExpected:", n_landmarks, "landmarks x", n_dim, "dimensions",
-               "\nGot:", nrow(lm_matrix), "x", ncol(lm_matrix)))
+} else {
+  # landmarks_data is a list - need to convert to array
+  cat("Converting landmark list to array format...\n")
+  landmarks_list <- landmarks_data
+
+  # Ensure all landmark sets are proper matrices
+  landmarks_list <- lapply(landmarks_list, function(x) {
+    if (!is.matrix(x)) {
+      x <- as.matrix(x)
+    }
+    return(x)
+  })
+
+  # Determine number of landmarks (should be consistent)
+  n_landmarks <- nrow(landmarks_list[[1]])
+  n_dim <- 2  # 2D data (X, Y)
+  n_specimens <- length(landmarks_list)
+
+  cat(paste("Number of specimens:", n_specimens, "\n"))
+  cat(paste("Number of landmarks:", n_landmarks, "\n"))
+  cat(paste("Dimensions:", n_dim, "(2D)\n\n"))
+
+  # Convert list to 3D array for geomorph
+  # Array format: (landmarks x dimensions x specimens)
+  landmark_array <- array(NA, dim = c(n_landmarks, n_dim, n_specimens),
+                         dimnames = list(
+                           rownames(landmarks_list[[1]]),  # landmark names
+                           c("X", "Y"),                     # coordinate names
+                           specimen_names                   # specimen names
+                         ))
+
+  # Fill the array with error checking
+  for (i in 1:n_specimens) {
+    lm_matrix <- as.matrix(landmarks_list[[i]])
+
+    # Verify dimensions
+    if (nrow(lm_matrix) != n_landmarks || ncol(lm_matrix) != n_dim) {
+      stop(paste("ERROR: Dimension mismatch for specimen", i, "(",specimen_names[i], ")",
+                 "\nExpected:", n_landmarks, "landmarks x", n_dim, "dimensions",
+                 "\nGot:", nrow(lm_matrix), "x", ncol(lm_matrix)))
+    }
+
+    landmark_array[, , i] <- lm_matrix
   }
-
-  landmark_array[, , i] <- lm_matrix
 }
 
 cat("Landmark array created successfully\n")

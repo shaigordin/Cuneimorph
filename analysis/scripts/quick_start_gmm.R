@@ -114,7 +114,10 @@ cat("GPA complete!\n\n")
 
 # ===== STEP 4: Principal Components Analysis =====
 cat("Performing PCA...\n")
-pca <- plotTangentSpace(gpa$coords, label = TRUE, verbose = TRUE)
+pca <- gm.prcomp(gpa$coords)
+cat("PCA complete!\n")
+cat("PC1 explains", round(pca$sdev[1]^2 / sum(pca$sdev^2) * 100, 1), "% of variance\n")
+cat("PC2 explains", round(pca$sdev[2]^2 / sum(pca$sdev^2) * 100, 1), "% of variance\n")
 
 # ===== STEP 5: Visualizations =====
 cat("\nCreating plots...\n")
@@ -130,8 +133,15 @@ title("Raw Landmarks")
 plotAllSpecimens(gpa$coords, mean = TRUE)
 title("Aligned Landmarks")
 dev.off()
+cat("  - Saved alignment plot\n")
 
-# Plot 2: Shape variation
+# Plot 2: PCA plot
+pdf("analysis/output/quick_pca.pdf", width = 8, height = 8)
+plot(pca, main = "PCA of Shape Variation")
+dev.off()
+cat("  - Saved PCA plot\n")
+
+# Plot 3: Shape variation
 pdf("analysis/output/quick_shape_variation.pdf", width = 8, height = 8)
 consensus <- mshape(gpa$coords)
 plotRefToTarget(consensus,
@@ -139,23 +149,28 @@ plotRefToTarget(consensus,
                 method = "TPS")
 title("Shape Deformation (Specimen 1 vs Consensus)")
 dev.off()
+cat("  - Saved shape variation plot\n")
 
 # ===== STEP 6: Save Results =====
-cat("Saving results...\n")
+cat("\nSaving results...\n")
 
 results <- data.frame(
   Specimen = dimnames(coords)[[3]],
   CentroidSize = gpa$Csize,
-  PC1 = pca$pc.scores[, 1],
-  PC2 = pca$pc.scores[, 2]
+  PC1 = pca$x[, 1],
+  PC2 = pca$x[, 2]
 )
 
 write.csv(results, "analysis/output/quick_results.csv", row.names = FALSE)
+cat("  - Saved results table\n")
 
 # ===== SUMMARY =====
 cat("\n=== ANALYSIS COMPLETE ===\n")
 cat("Results saved to analysis/output/\n")
-cat("\nPC1 variance:", round(pca$pc.summary$importance[2, 1] * 100, 1), "%\n")
-cat("PC2 variance:", round(pca$pc.summary$importance[2, 2] * 100, 1), "%\n")
+cat("\nGenerated files:\n")
+cat("  - quick_alignment.pdf: Raw vs aligned landmarks\n")
+cat("  - quick_pca.pdf: Principal components plot\n")
+cat("  - quick_shape_variation.pdf: Shape deformation\n")
+cat("  - quick_results.csv: Centroid sizes and PC scores\n")
 cat("\nResults table:\n")
 print(results)

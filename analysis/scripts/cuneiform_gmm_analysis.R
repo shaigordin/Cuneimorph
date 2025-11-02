@@ -173,20 +173,18 @@ cat("Centroid sizes:", round(gpa_result$Csize, 2), "\n\n")
 cat("Step 4: Performing Principal Components Analysis...\n")
 
 # Perform PCA on Procrustes-aligned coordinates
-pca_result <- plotTangentSpace(gpa_result$coords,
-                               label = TRUE,
-                               verbose = TRUE)
+pca_result <- gm.prcomp(gpa_result$coords)
 
 # Extract variance explained
-variance_explained <- pca_result$pc.summary$importance[2, 1:min(5, ncol(pca_result$pc.summary$importance))]
+variance_explained <- (pca_result$sdev^2 / sum(pca_result$sdev^2))[1:min(5, length(pca_result$sdev))]
 cat("\nVariance explained by first PCs:\n")
-print(round(variance_explained * 100, 2))
+for (i in 1:length(variance_explained)) {
+  cat(sprintf("  PC%d: %.2f%%\n", i, variance_explained[i] * 100))
+}
 
 # Save PCA plot
 pdf(file.path(output_dir, "pca_plot.pdf"), width = 10, height = 8)
-plotTangentSpace(gpa_result$coords,
-                label = TRUE,
-                verbose = FALSE)
+plot(pca_result, main = "PCA of Shape Variation")
 dev.off()
 cat("\nPCA plot saved to:", file.path(output_dir, "pca_plot.pdf"), "\n\n")
 
@@ -219,12 +217,12 @@ pdf(file.path(output_dir, "shape_variation_PC1.pdf"), width = 10, height = 8)
 consensus <- mshape(gpa_result$coords)
 
 # Create shapes representing extremes of PC1
-pc1_min <- min(pca_result$pc.scores[, 1])
-pc1_max <- max(pca_result$pc.scores[, 1])
+pc1_min <- min(pca_result$x[, 1])
+pc1_max <- max(pca_result$x[, 1])
 
 # Plot shape deformation along PC1
 plotRefToTarget(consensus,
-                gpa_result$coords[, , which.max(pca_result$pc.scores[, 1])],
+                gpa_result$coords[, , which.max(pca_result$x[, 1])],
                 method = "TPS",
                 mag = 2)
 title("Shape Variation along PC1 (maximum)")
@@ -265,8 +263,8 @@ cat("Step 7: Compiling summary statistics...\n")
 results_df <- data.frame(
   Specimen = specimen_names,
   CentroidSize = gpa_result$Csize,
-  PC1 = pca_result$pc.scores[, 1],
-  PC2 = pca_result$pc.scores[, 2],
+  PC1 = pca_result$x[, 1],
+  PC2 = pca_result$x[, 2],
   ProcrustesDistance = procrustes_distances,
   stringsAsFactors = FALSE
 )

@@ -3,12 +3,32 @@
 # Simplified analysis script for beginners
 # ============================================================================
 
+# Suppress rgl warnings (for headless/non-X11 environments)
+options(rgl.useNULL = TRUE)
+
 # Load packages
 library(StereoMorph)
 library(geomorph)
 
-# Set working directory
-setwd("/home/user/Cuneimorph")
+# Automatically detect and set working directory
+script_dir <- tryCatch({
+  # Try to get script location if run from RStudio
+  dirname(rstudioapi::getActiveDocumentContext()$path)
+}, error = function(e) {
+  # Otherwise use current working directory
+  getwd()
+})
+
+# Navigate to project root if we're in the scripts directory
+if (basename(script_dir) == "scripts") {
+  project_root <- normalizePath(file.path(script_dir, "..", ".."))
+  setwd(project_root)
+  cat("Working from project root:", getwd(), "\n")
+} else {
+  cat("Working from:", getwd(), "\n")
+  cat("NOTE: If this isn't the Cuneimorph project root, please cd there first\n")
+}
+cat("\n")
 
 # ===== STEP 1: Read Data =====
 cat("Reading landmark data...\n")

@@ -6,6 +6,9 @@
 # Clear workspace
 rm(list = ls())
 
+# Suppress rgl warnings (for headless environments)
+options(rgl.useNULL = TRUE)
+
 # Load required packages
 library(StereoMorph)
 library(geomorph)
@@ -18,8 +21,28 @@ library(dplyr)
 
 cat("Step 1: Importing landmark data...\n")
 
-# Set working directory to project root
-setwd("/home/user/Cuneimorph")
+# Automatically detect project root directory
+# This works whether you source the file or run from command line
+script_dir <- tryCatch({
+  # If sourced in RStudio or R console
+  dirname(rstudioapi::getActiveDocumentContext()$path)
+}, error = function(e) {
+  # If run via Rscript
+  getSrcDirectory(function(x) {x})
+})
+
+# If still can't detect, use current working directory
+if (is.null(script_dir) || script_dir == "") {
+  script_dir <- getwd()
+  cat("Using current working directory:", script_dir, "\n")
+} else {
+  cat("Detected script directory:", script_dir, "\n")
+}
+
+# Navigate to project root (assuming script is in analysis/scripts/)
+project_root <- normalizePath(file.path(script_dir, "..", ".."))
+setwd(project_root)
+cat("Project root set to:", getwd(), "\n\n")
 
 # Define paths
 shapes_dir <- file.path(getwd(), "data", "shapes")

@@ -1,0 +1,1 @@
+PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/imagemagick@6/lib/pkgconfig

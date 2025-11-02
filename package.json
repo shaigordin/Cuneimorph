@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "exif-parser": "^0.1.12",
+    "image-size": "^2.0.2",
+    "puppeteer": "^24.18.0",
+    "sharp": "^0.34.3"
+  }
+}

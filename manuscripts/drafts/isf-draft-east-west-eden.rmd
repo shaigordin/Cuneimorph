@@ -1,0 +1,37 @@
+---
+title: "East and west of Eden: Computational Shape Analysis to understand Origins of Cuneiform Writing in the Western and Eastern Peripheries"
+author: 
+  - name: "Shai Gordin"
+    affiliation: "Land of Israel and Archaeology, Ariel University"
+    email: "shaigo@ariel.ac.il"
+date: "`r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    number_sections: true
+    fig_caption: true
+    code_folding: hide
+  bookdown::pdf_document2:
+    toc: true
+    number_sections: true
+    keep_tex: true
+  bookdown::word_document2:
+    toc: true
+    toc_float: true
+    number_sections: true
+    fig_caption: true
+    code_folding: hide
+bibliography: /Users/shaigordin/Dropbox/Git-projects/Cuneimorph/manuscripts/bibliography/cuneimorph.bib
+csl: /Users/shaigordin/Dropbox/Git-projects/Cuneimorph/manuscripts/bibliography/chicago-author-date.csl
+link-citations: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# East and west of Eden (steinback) 
+## Computational Shape Analysis to understand Origins of Cuneiform Writing in the Western and Eastern Peripheries
+
+Origins of writing from east to west 
+
+How did they learn cuneiform?

@@ -84,6 +84,14 @@ cat("Coordinates per landmark: 2 (X, Y)\n\n")
 
 cat("Step 2: Preparing data for analysis...\n")
 
+# Ensure all landmark sets are proper matrices
+landmarks_list <- lapply(landmarks_list, function(x) {
+  if (!is.matrix(x)) {
+    x <- as.matrix(x)
+  }
+  return(x)
+})
+
 # Determine number of landmarks (should be consistent)
 n_landmarks <- nrow(landmarks_list[[1]])
 n_dim <- 2  # 2D data (X, Y)
@@ -106,9 +114,18 @@ landmark_array <- array(NA, dim = c(n_landmarks, n_dim, n_specimens),
                          specimen_names                   # specimen names
                        ))
 
-# Fill the array
+# Fill the array with error checking
 for (i in 1:n_specimens) {
-  landmark_array[, , i] <- as.matrix(landmarks_list[[i]])
+  lm_matrix <- as.matrix(landmarks_list[[i]])
+
+  # Verify dimensions
+  if (nrow(lm_matrix) != n_landmarks || ncol(lm_matrix) != n_dim) {
+    stop(paste("ERROR: Dimension mismatch for specimen", i, "(",specimen_names[i], ")",
+               "\nExpected:", n_landmarks, "landmarks x", n_dim, "dimensions",
+               "\nGot:", nrow(lm_matrix), "x", ncol(lm_matrix)))
+  }
+
+  landmark_array[, , i] <- lm_matrix
 }
 
 cat("Landmark array created successfully\n")

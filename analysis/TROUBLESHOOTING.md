@@ -96,28 +96,50 @@ cd /path/to/Cuneimorph
 Rscript analysis/scripts/quick_start_gmm.R
 ```
 
+## Error: "incorrect number of subscripts"
+
+**Problem:** Dimension mismatch when creating landmark array.
+
+**Cause:** The landmark data structure from `readShapes()` isn't in the expected format.
+
+**Solution:** The updated scripts now:
+1. Convert each landmark set to a proper matrix
+2. Check dimensions before assignment
+3. Give detailed error messages if dimensions don't match
+
+**If you still get this error:**
+
+Run the diagnostic script:
+```bash
+Rscript analysis/scripts/diagnose_data.R
+```
+
+This will show you the exact structure of your landmark data and help identify the problem.
+
 ## Error reading landmark files
 
 **Problem:** StereoMorph can't parse your .txt files.
 
 **Check format:**
 ```bash
-head -5 data/shapes/cuneiform_ba.txt
+head -5 data/shapes/your_file.txt
 ```
 
-Should look like:
-```
-LM1 123.45 67.89
-LM2 234.56 78.90
-...
+Should be in StereoMorph XML format:
+```xml
+<shapes type=list>
+  <landmarks.pixel type=matrix nrow=21 ncol=2>
+    LM1  123.45  67.89
+    LM2  234.56  78.90
+    ...
+  </landmarks.pixel>
+</shapes>
 ```
 
 **Fix:** Make sure:
-- No extra blank lines at start
-- Tab or space-separated values
-- Landmark names in first column (or no names)
-- X coordinate in second column
-- Y coordinate in third column
+- Files are in StereoMorph XML format (not plain text)
+- Each specimen has the same number of landmarks
+- Landmark coordinates are numeric
 
 ## The analysis runs but produces no output
 

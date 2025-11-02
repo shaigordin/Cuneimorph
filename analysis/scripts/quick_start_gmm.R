@@ -49,13 +49,37 @@ if (!is.null(shapes$landmarks.scaled) && length(shapes$landmarks.scaled) > 0) {
 }
 
 # Convert to array (p x k x n format: landmarks x dimensions x specimens)
-n_lm <- nrow(landmarks[[1]])   # number of landmarks
-n_dim <- ncol(landmarks[[1]])  # dimensions (2 for 2D)
 n_spec <- length(landmarks)    # number of specimens
 
+# Ensure each landmark set is a proper matrix
+landmarks <- lapply(landmarks, function(x) {
+  if (!is.matrix(x)) {
+    x <- as.matrix(x)
+  }
+  return(x)
+})
+
+# Get dimensions from first specimen
+n_lm <- nrow(landmarks[[1]])   # number of landmarks
+n_dim <- ncol(landmarks[[1]])  # dimensions (2 for 2D)
+
+cat("Array dimensions: ", n_lm, " landmarks x ", n_dim, " dimensions x ", n_spec, " specimens\n")
+
+# Create array
 coords <- array(NA, dim = c(n_lm, n_dim, n_spec))
+
+# Fill array
 for (i in 1:n_spec) {
-  coords[, , i] <- as.matrix(landmarks[[i]])
+  lm_matrix <- as.matrix(landmarks[[i]])
+
+  # Check dimensions match
+  if (nrow(lm_matrix) != n_lm || ncol(lm_matrix) != n_dim) {
+    stop(paste("Dimension mismatch for specimen", i,
+               ": expected", n_lm, "x", n_dim,
+               "but got", nrow(lm_matrix), "x", ncol(lm_matrix)))
+  }
+
+  coords[, , i] <- lm_matrix
 }
 
 # Name the specimens

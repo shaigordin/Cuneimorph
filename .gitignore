@@ -1,2 +1,4 @@
 node_modules
-data/
+data/raw/
+data/processed/
+data/external/

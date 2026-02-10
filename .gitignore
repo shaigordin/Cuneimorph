@@ -2,3 +2,4 @@ node_modules
 data/raw/
 data/processed/
 data/external/
+analysis/deprecated/

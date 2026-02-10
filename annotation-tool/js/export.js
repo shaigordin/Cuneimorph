@@ -9,7 +9,7 @@
  */
 
 import { fitControlPoints } from './analysis.js';
-import { generateCurvesTab } from './landmark-protocol.js';
+import { generateCurvesTab, toLegacyLandmarkId, toLegacyCurveId, fromLegacyLandmarkId, fromLegacyCurveId } from './landmark-protocol.js';
 
 /**
  * Export a single specimen to StereoMorph XML format.
@@ -24,15 +24,22 @@ export function exportStereoMorph(specimen) {
   const indexedLandmarks = [];
 
   // Build the landmark list in protocol order
+  // Support both new (p_s_01) and legacy (tail_vertex01) naming
   for (let w = 1; w <= nWedges; w++) {
     const pad = String(w).padStart(2, '0');
-    for (const type of ['tail_vertex', 'left_vertex', 'right_vertex', 'depth_point']) {
-      const id = `${type}${pad}`;
-      if (landmarks[id]) {
+    const types = [
+      { newId: `p_s_${pad}`, legacyId: `tail_vertex${pad}` },
+      { newId: `p_l_${pad}`, legacyId: `left_vertex${pad}` },
+      { newId: `p_r_${pad}`, legacyId: `right_vertex${pad}` },
+      { newId: `p_t_${pad}`, legacyId: `depth_point${pad}` }
+    ];
+    for (const { newId, legacyId } of types) {
+      const coords = landmarks[newId] || landmarks[legacyId];
+      if (coords) {
         namedLandmarks.push({
-          name: id,
-          x: Math.round(landmarks[id][0]),
-          y: Math.round(landmarks[id][1])
+          name: legacyId,
+          x: Math.round(coords[0]),
+          y: Math.round(coords[1])
         });
       }
     }
@@ -92,7 +99,9 @@ export function exportStereoMorph(specimen) {
   xml += '\t<curves.control type=list>\n';
   for (const ct of curvesTab) {
     const curveId = ct.name;
-    const curveData = curves[curveId];
+    // Try both new-style and legacy-style IDs
+    const newStyleId = fromLegacyCurveId(curveId) || curveId;
+    const curveData = curves[curveId] || curves[newStyleId];
     if (curveData && curveData.points && curveData.points.length > 0) {
       const controlPts = fitControlPoints(curveData.points, 5);
       xml += `\t\t<${curveId} type=matrix rownames=FALSE colnames=FALSE nrow=5 ncol=2 as.numeric=TRUE >\n`;
@@ -108,7 +117,8 @@ export function exportStereoMorph(specimen) {
   xml += '\t<curves.pixel type=list>\n';
   for (const ct of curvesTab) {
     const curveId = ct.name;
-    const curveData = curves[curveId];
+    const newStyleId2 = fromLegacyCurveId(curveId) || curveId;
+    const curveData = curves[curveId] || curves[newStyleId2];
     if (curveData && curveData.points && curveData.points.length > 0) {
       const nPoints = curveData.points.length;
       xml += `\t\t<${curveId} type=matrix rownames=FALSE colnames=FALSE nrow=${nPoints} ncol=2 as.numeric=TRUE >\n`;
@@ -323,14 +333,33 @@ export function importStereoMorph(xmlText) {
     }
   }
 
+  // Convert legacy landmark names to new protocol names
+  const convertedLandmarks = {};
+  for (const [name, coords] of Object.entries(landmarks)) {
+    const newName = fromLegacyLandmarkId(name);
+    convertedLandmarks[newName !== name ? newName : name] = coords;
+  }
+
+  // Convert legacy curve names
+  const convertedCurvesControl = {};
+  for (const [name, pts] of Object.entries(curvesControl)) {
+    const newName = fromLegacyCurveId(name);
+    convertedCurvesControl[newName !== name ? newName : name] = pts;
+  }
+  const convertedCurvesPixel = {};
+  for (const [name, pts] of Object.entries(curvesPixel)) {
+    const newName = fromLegacyCurveId(name);
+    convertedCurvesPixel[newName !== name ? newName : name] = pts;
+  }
+
   // Infer number of wedges from landmark names
   let maxWedge = 0;
-  for (const name of Object.keys(landmarks)) {
+  for (const name of Object.keys(convertedLandmarks)) {
     const match = name.match(/(\d+)$/);
     if (match) maxWedge = Math.max(maxWedge, parseInt(match[1]));
   }
 
-  return { landmarks, curvesControl, curvesPixel, nWedges: maxWedge };
+  return { landmarks: convertedLandmarks, curvesControl: convertedCurvesControl, curvesPixel: convertedCurvesPixel, nWedges: maxWedge };
 }
 
 /**

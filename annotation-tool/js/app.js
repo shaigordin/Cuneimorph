@@ -14,7 +14,10 @@
 import { CanvasEngine } from './canvas-engine.js';
 import {
   generateLandmarkSequence, generateCurveSequence,
-  LANDMARK_TYPES, CURVE_TYPES, METADATA_FIELDS, MAX_WEDGES
+  LANDMARK_TYPES, CURVE_TYPES, METADATA_FIELDS, MAX_WEDGES,
+  ANNOTATION_TIERS, DEFAULT_TIER, generateWedgeTemplate,
+  computeAngles, ANGLE_TYPES, FACE_TYPES,
+  fromLegacyLandmarkId, fromLegacyCurveId
 } from './landmark-protocol.js';
 import { MorphoAnalysis } from './analysis.js';
 import {
@@ -31,6 +34,7 @@ class CuneimorphAnnotator {
     this.analysis = new MorphoAnalysis();
     this.mode = 'landmark'; // 'landmark' | 'curve' | 'navigate'
     this.nWedges = 3;
+    this.annotationTier = DEFAULT_TIER; // 'minimal' | 'standard' | 'full'
 
     // Current specimen
     this.currentLandmarks = {};  // id -> [x, y]
@@ -77,6 +81,7 @@ class CuneimorphAnnotator {
     // Setup all UI event listeners
     this._setupImageLoading();
     this._setupWedgeSelector();
+    this._setupTierSelector();
     this._setupModeControls();
     this._setupMetadataForm();
     this._setupExportControls();
@@ -139,12 +144,48 @@ class CuneimorphAnnotator {
 
   _updateWedgeCount(n) {
     this.nWedges = n;
-    this.landmarkSequence = generateLandmarkSequence(n);
-    this.curveSequence = generateCurveSequence(n);
+    this.landmarkSequence = generateLandmarkSequence(n, this.annotationTier);
+    this.curveSequence = generateCurveSequence(n, this.annotationTier);
     this.currentLandmarkIndex = 0;
     this.currentCurveIndex = 0;
     this._renderProtocolGuide();
     this._updateProgressBar();
+  }
+
+  // --- Tier Selector ---
+
+  _setupTierSelector() {
+    const selector = document.getElementById('annotation-tier');
+    if (!selector) return;
+    selector.addEventListener('change', (e) => {
+      this._switchTier(e.target.value);
+    });
+  }
+
+  _switchTier(tier) {
+    if (!ANNOTATION_TIERS[tier]) return;
+    this.annotationTier = tier;
+    // Update the dropdown to match
+    const selector = document.getElementById('annotation-tier');
+    if (selector) selector.value = tier;
+    // Update description text
+    const desc = document.getElementById('tier-description');
+    if (desc) desc.textContent = ANNOTATION_TIERS[tier].description;
+    // Regenerate sequences for new tier (preserving placed landmarks/curves)
+    this.landmarkSequence = generateLandmarkSequence(this.nWedges, this.annotationTier);
+    this.curveSequence = generateCurveSequence(this.nWedges, this.annotationTier);
+    // Recalculate current index based on what's already placed
+    this.currentLandmarkIndex = Math.min(
+      this.currentLandmarkIndex,
+      this.landmarkSequence.length
+    );
+    this.currentCurveIndex = Math.min(
+      this.currentCurveIndex,
+      this.curveSequence.length
+    );
+    this._renderProtocolGuide();
+    this._updateProgressBar();
+    this._updateAnalysisPanel();
   }
 
   // --- Mode Controls ---
@@ -405,9 +446,16 @@ class CuneimorphAnnotator {
 
     let html = '';
 
+    // Determine current highlight ID for wedge template
+    let highlightId = null;
+    let currentWedge = null;
+
     if (this.mode === 'landmark') {
       if (this.currentLandmarkIndex < this.landmarkSequence.length) {
         const current = this.landmarkSequence[this.currentLandmarkIndex];
+        highlightId = current.type; // e.g., 'p_s', 'p_l'
+        currentWedge = current.wedge;
+
         html += `<div class="guide-current">`;
         html += `<div class="guide-label">Place landmark:</div>`;
         html += `<div class="guide-landmark" style="border-color: ${current.color}">`;
@@ -427,7 +475,10 @@ class CuneimorphAnnotator {
     } else if (this.mode === 'curve') {
       if (this.currentCurveIndex < this.curveSequence.length) {
         const current = this.curveSequence[this.currentCurveIndex];
+        highlightId = current.type; // e.g., 'e_sa', 'e_la'
+        currentWedge = current.wedge;
         const isDrawing = !!this.canvas.activeCurve;
+
         html += `<div class="guide-current">`;
         html += `<div class="guide-label">${isDrawing ? 'Drawing curve:' : 'Draw curve:'}</div>`;
         html += `<div class="guide-landmark" style="border-color: ${current.color}">`;
@@ -445,6 +496,38 @@ class CuneimorphAnnotator {
       }
     } else {
       html += `<div class="guide-hint">Navigation mode. Scroll to zoom, drag to pan. Press <kbd>L</kbd> for landmarks, <kbd>C</kbd> for curves.</div>`;
+    }
+
+    // Build placed landmarks map for current wedge (to show checkmarks in template)
+    const placedForWedge = {};
+    if (currentWedge) {
+      const pad = String(currentWedge).padStart(2, '0');
+      for (const typeId of Object.keys(LANDMARK_TYPES)) {
+        if (this.currentLandmarks[`${typeId}_${pad}`]) {
+          placedForWedge[typeId] = true;
+        }
+      }
+    }
+
+    // Wedge template SVG
+    if (highlightId || currentWedge) {
+      html += `<div class="wedge-template-container">`;
+      html += generateWedgeTemplate(highlightId, this.annotationTier, placedForWedge);
+      html += `</div>`;
+    }
+
+    // Show computed angles (full tier, after all landmarks for a wedge are placed)
+    if (this.annotationTier === 'full' && currentWedge) {
+      const angles = computeAngles(this.currentLandmarks, currentWedge);
+      if (Object.keys(angles).length > 0) {
+        html += `<div class="guide-angles">`;
+        html += `<div class="guide-label">Computed angles (wedge ${currentWedge}):</div>`;
+        for (const [id, deg] of Object.entries(angles)) {
+          const def = ANGLE_TYPES[id];
+          html += `<div class="stat-row"><span>${def?.label || id}:</span><span>${deg.toFixed(1)}°</span></div>`;
+        }
+        html += `</div>`;
+      }
     }
 
     guide.innerHTML = html;
@@ -483,6 +566,8 @@ class CuneimorphAnnotator {
     // Basic stats for current specimen
     let html = '<div class="analysis-section">';
     html += `<h4>Current Specimen</h4>`;
+    const tierLabel = ANNOTATION_TIERS[this.annotationTier]?.label || this.annotationTier;
+    html += `<div class="stat-row"><span>Tier:</span><span>${tierLabel}</span></div>`;
     html += `<div class="stat-row"><span>Landmarks:</span><span>${nPlaced} / ${this.landmarkSequence.length}</span></div>`;
     html += `<div class="stat-row"><span>Curves:</span><span>${nCurves} / ${this.curveSequence.length}</span></div>`;
 
@@ -781,19 +866,37 @@ class CuneimorphAnnotator {
     this._updateWedgeCount(data.nWedges);
     document.getElementById('wedge-count').value = data.nWedges;
 
-    // Place landmarks on canvas
+    // Place landmarks on canvas — new IDs use pattern: p_s_01, p_l_01, etc.
     this.currentLandmarks = data.landmarks;
     for (const [id, coords] of Object.entries(data.landmarks)) {
-      const match = id.match(/^(\w+?)(\d+)$/);
-      if (match) {
-        const type = match[1];
-        const wedge = parseInt(match[2]);
-        const def = LANDMARK_TYPES[type] || {};
+      // Match new-style IDs like p_s_01, p_l_02
+      const newMatch = id.match(/^(p_[slrt])_(\d+)$/);
+      if (newMatch) {
+        const typeId = newMatch[1];
+        const wedge = parseInt(newMatch[2]);
+        const def = LANDMARK_TYPES[typeId] || {};
         this.canvas.setLandmark(id, coords[0], coords[1], {
           color: def.color || '#fff',
           symbol: def.symbol || 'circle',
           wedge
         });
+      } else {
+        // Legacy-style IDs: tail_vertex01, etc.
+        const legacyMatch = id.match(/^(\w+?)(\d+)$/);
+        if (legacyMatch) {
+          const type = legacyMatch[1];
+          const wedge = parseInt(legacyMatch[2]);
+          // Find the matching LANDMARK_TYPES entry by legacyName
+          let def = {};
+          for (const [typeId, typeDef] of Object.entries(LANDMARK_TYPES)) {
+            if (typeDef.legacyName === type) { def = typeDef; break; }
+          }
+          this.canvas.setLandmark(id, coords[0], coords[1], {
+            color: def.color || '#fff',
+            symbol: def.symbol || 'circle',
+            wedge
+          });
+        }
       }
     }
     this.currentLandmarkIndex = Object.keys(data.landmarks).length;
@@ -802,9 +905,22 @@ class CuneimorphAnnotator {
     const curveSource = Object.keys(data.curvesPixel).length > 0 ? data.curvesPixel : data.curvesControl;
     for (const [id, points] of Object.entries(curveSource)) {
       this.currentCurves[id] = { points };
-      const match = id.match(/^(\w+?)(\d+)$/);
-      const type = match ? match[1] : id;
-      const def = CURVE_TYPES[type] || {};
+      // Match new-style IDs: e_sa_01, e_la_02, etc.
+      const newMatch = id.match(/^(e_[slr]a?_?)(\d+)$/);
+      let def = {};
+      if (newMatch) {
+        const typeId = newMatch[1].replace(/_$/, ''); // strip trailing underscore
+        def = CURVE_TYPES[typeId] || {};
+      } else {
+        // Legacy-style IDs
+        const legacyMatch = id.match(/^(\w+?)(\d+)$/);
+        if (legacyMatch) {
+          const type = legacyMatch[1];
+          for (const [typeId, typeDef] of Object.entries(CURVE_TYPES)) {
+            if (typeDef.legacyName === type) { def = typeDef; break; }
+          }
+        }
+      }
       this.canvas.setCurve(id, points, { color: def.color || '#9b59b6', label: def.label || id });
     }
     this.currentCurveIndex = Object.keys(this.currentCurves).length;
@@ -865,6 +981,15 @@ class CuneimorphAnnotator {
         case 't': case 'T':
           this.canvas.showLabels = !this.canvas.showLabels;
           this.canvas.render();
+          break;
+        case '1':
+          this._switchTier('minimal');
+          break;
+        case '2':
+          this._switchTier('standard');
+          break;
+        case '3':
+          this._switchTier('full');
           break;
       }
     });

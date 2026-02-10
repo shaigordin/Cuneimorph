@@ -48,6 +48,17 @@
           </select>
           <span class="text-muted" style="font-size:11px;">(per sign)</span>
         </div>
+        <div class="wedge-selector" style="margin-top: 6px;">
+          <label for="annotation-tier">Tier:</label>
+          <select id="annotation-tier">
+            <option value="minimal" selected>Minimal — vertices + outer edges</option>
+            <option value="standard">Standard — + inner edges</option>
+            <option value="full">Full — + angles &amp; faces</option>
+          </select>
+        </div>
+        <div id="tier-description" class="text-muted" style="font-size:11px; margin-top:4px; line-height:1.4;">
+          4 points + 3 curves per wedge. Compatible with StereoMorph.
+        </div>
       </div>
 
       <!-- Protocol Guide -->
@@ -83,6 +94,7 @@
           <kbd>Shift+drag</kbd> <span>Move landmark</span>
           <kbd>Alt+drag</kbd> <span>Pan canvas</span>
           <kbd>Scroll</kbd> <span>Zoom</span>
+          <kbd>1/2/3</kbd> <span>Tier level</span>
         </div>
       </div>
     </aside>
@@ -165,27 +177,24 @@
 
       <!-- Landmark Legend -->
       <div class="panel-section">
-        <h3>Landmark Types</h3>
+        <h3>Vertices (Ecken)</h3>
         <div style="font-size:12px;">
           <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
             <span style="display:inline-block; width:12px; height:12px; background:#e74c3c; border-radius:50%;"></span>
-            <span>Tail vertex (Type I) — stylus entry</span>
+            <span><strong>p&#x209B;</strong> Tail vertex <em>(Scheitelpunkt)</em> — stylus entry</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
             <span style="display:inline-block; width:12px; height:12px; background:#3498db; transform:rotate(45deg);"></span>
-            <span>Left vertex (Type II) — head left</span>
+            <span><strong>p&#x2097;</strong> Left vertex <em>(linke Ecke)</em> — head left</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
             <span style="display:inline-block; width:12px; height:12px; background:#2ecc71; transform:rotate(45deg);"></span>
-            <span>Right vertex (Type II) — head right</span>
+            <span><strong>p&#x1D63;</strong> Right vertex <em>(rechte Ecke)</em> — head right</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
             <span style="display:inline-block; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:12px solid #f39c12;"></span>
-            <span>Depth point (Type III) — interior</span>
+            <span><strong>p&#x209C;</strong> Depth point <em>(Tiefpunkt)</em> — interior</span>
           </div>
-        </div>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
-          Shapes follow Bookstein landmark classification adapted for cuneiform paleography.
         </div>
       </div>
 
@@ -193,14 +202,16 @@
       <div class="panel-section">
         <h3>Protocol</h3>
         <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-          <p>Each wedge impression is annotated with <strong>4 fixed landmarks</strong> and <strong>3 curves</strong>:</p>
+          <p>Geometric model follows Cammarosano et al. (2014). Each wedge is annotated with:</p>
           <ul style="margin: 6px 0; padding-left: 16px;">
-            <li><strong>tail_vertex</strong> — where the stylus shaft enters</li>
-            <li><strong>left_vertex</strong> — left extent of wedge head</li>
-            <li><strong>right_vertex</strong> — right extent of wedge head</li>
-            <li><strong>depth_point</strong> — interior depth reference</li>
+            <li><strong>Minimal:</strong> 4 vertices + 3 outer edges (<em>Aussenkanten</em>)</li>
+            <li><strong>Standard:</strong> + 3 inner edges (<em>Innenkanten</em>)</li>
+            <li><strong>Full:</strong> + computed angles &amp; face areas</li>
           </ul>
-          <p>Curves trace the outer edges of each wedge between vertex pairs.</p>
+          <p style="margin-top:6px;">Curves trace edges between vertex pairs. Landmark types follow Bookstein classification.</p>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+          Ref: Cammarosano, Müller, Fisseler &amp; Weichert (2014) "Schriftmetrologie des Keils"
         </div>
       </div>
 

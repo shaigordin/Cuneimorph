@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuneimorph Annotator — Geometric Morphometrics for Cuneiform</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1><span>&#x1F4D0;</span> Cuneimorph <span>Annotator</span></h1>
+      <div class="header-controls">
+        <span id="image-info" class="text-muted">No image loaded</span>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <span id="progress-text" class="text-muted" style="font-size:12px; font-family: var(--font-mono);">0 / 0</span>
+      </div>
+    </header>
+
+    <!-- Left Panel: Protocol + Metadata -->
+    <aside class="panel-left">
+
+      <!-- Image + Wedge Setup -->
+      <div class="panel-section">
+        <h3>Setup</h3>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <button class="btn btn-primary" id="btn-load-image">Load Image</button>
+          <input type="file" id="file-input" accept="image/*" style="display:none">
+          <button class="btn" id="btn-import-annotation">Import</button>
+          <input type="file" id="import-file-input" accept=".txt,.json,.tps" style="display:none">
+        </div>
+        <div class="wedge-selector">
+          <label for="wedge-count">Wedges:</label>
+          <select id="wedge-count">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+          </select>
+          <span class="text-muted" style="font-size:11px;">(per sign)</span>
+        </div>
+      </div>
+
+      <!-- Protocol Guide -->
+      <div class="panel-section">
+        <h3>Annotation Guide</h3>
+        <div id="protocol-guide"></div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="panel-section" id="panel-metadata">
+        <h3>Specimen Metadata</h3>
+        <div class="form-group">
+          <label for="specimen-id-input">Specimen ID <span class="required">*</span></label>
+          <input type="text" id="specimen-id-input" placeholder="e.g., ugarit_RS15062_sign01">
+        </div>
+        <form id="metadata-form"></form>
+        <button class="btn btn-small" id="btn-toggle-extended" style="margin-top:6px;">Show extended fields</button>
+        <div id="metadata-extended" class="hidden"></div>
+      </div>
+
+      <!-- Shortcuts -->
+      <div class="panel-section">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
+          <kbd>L</kbd> <span>Landmark mode</span>
+          <kbd>C</kbd> <span>Curve mode</span>
+          <kbd>N</kbd> <span>Navigate mode</span>
+          <kbd>Enter</kbd> <span>Finish curve</span>
+          <kbd>Esc</kbd> <span>Cancel curve</span>
+          <kbd>Ctrl+Z</kbd> <span>Undo</span>
+          <kbd>F</kbd> <span>Fit to view</span>
+          <kbd>T</kbd> <span>Toggle labels</span>
+          <kbd>Shift+drag</kbd> <span>Move landmark</span>
+          <kbd>Alt+drag</kbd> <span>Pan canvas</span>
+          <kbd>Scroll</kbd> <span>Zoom</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center: Canvas -->
+    <main class="panel-center">
+      <div class="canvas-toolbar">
+        <div class="toolbar-group">
+          <button class="btn btn-small active" id="btn-mode-landmark" title="Place landmarks (L)">Landmarks</button>
+          <button class="btn btn-small" id="btn-mode-curve" title="Draw curves (C)">Curves</button>
+          <button class="btn btn-small" id="btn-mode-navigate" title="Navigate (N)">Navigate</button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-group">
+          <button class="btn btn-small" id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
+          <button class="btn btn-small" id="btn-clear-all" title="Clear all">Clear</button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-group">
+          <button class="btn btn-small" id="btn-fit-view" title="Fit to view (F)">Fit</button>
+          <button class="btn btn-small" id="btn-toggle-labels" title="Toggle labels (T)">Labels</button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-group">
+          <button class="btn btn-small btn-primary" id="btn-save-to-dataset">Save to Dataset</button>
+          <button class="btn btn-small" id="btn-new-specimen">New Specimen</button>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="annotation-canvas"></canvas>
+      </div>
+
+      <div class="canvas-statusbar">
+        <span id="coord-display">x: — y: —</span>
+        <span id="zoom-display"></span>
+      </div>
+    </main>
+
+    <!-- Right Panel: Analysis + Export -->
+    <aside class="panel-right">
+
+      <!-- Live Analysis -->
+      <div class="panel-section">
+        <h3>Analysis</h3>
+        <div id="analysis-content">
+          <div class="analysis-section">
+            <p class="text-muted" style="font-size:12px;">
+              Load an image and place landmarks to see live analysis.
+              Save multiple specimens to the dataset for Procrustes + PCA.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="panel-section">
+        <h3>Export Current Specimen</h3>
+        <div class="export-group">
+          <button class="btn btn-small" id="btn-export-stereomorph" title="StereoMorph XML for R pipeline">
+            StereoMorph (.txt)
+          </button>
+          <button class="btn btn-small" id="btn-export-json" title="Full metadata + coordinates">
+            Cuneimorph JSON
+          </button>
+          <button class="btn btn-small" id="btn-export-tps" title="Standard morphometrics format">
+            TPS format
+          </button>
+        </div>
+        <div class="export-divider">— dataset —</div>
+        <div class="export-group">
+          <button class="btn btn-small" id="btn-export-dataset-csv" title="Flat CSV table of all specimens">
+            Dataset CSV
+          </button>
+          <button class="btn btn-small" id="btn-export-dataset-bundle" title="Full project bundle with all data">
+            Project Bundle (JSON)
+          </button>
+        </div>
+      </div>
+
+      <!-- Landmark Legend -->
+      <div class="panel-section">
+        <h3>Landmark Types</h3>
+        <div style="font-size:12px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span style="display:inline-block; width:12px; height:12px; background:#e74c3c; border-radius:50%;"></span>
+            <span>Tail vertex (Type I) — stylus entry</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span style="display:inline-block; width:12px; height:12px; background:#3498db; transform:rotate(45deg);"></span>
+            <span>Left vertex (Type II) — head left</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span style="display:inline-block; width:12px; height:12px; background:#2ecc71; transform:rotate(45deg);"></span>
+            <span>Right vertex (Type II) — head right</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span style="display:inline-block; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:12px solid #f39c12;"></span>
+            <span>Depth point (Type III) — interior</span>
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+          Shapes follow Bookstein landmark classification adapted for cuneiform paleography.
+        </div>
+      </div>
+
+      <!-- Protocol info -->
+      <div class="panel-section">
+        <h3>Protocol</h3>
+        <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+          <p>Each wedge impression is annotated with <strong>4 fixed landmarks</strong> and <strong>3 curves</strong>:</p>
+          <ul style="margin: 6px 0; padding-left: 16px;">
+            <li><strong>tail_vertex</strong> — where the stylus shaft enters</li>
+            <li><strong>left_vertex</strong> — left extent of wedge head</li>
+            <li><strong>right_vertex</strong> — right extent of wedge head</li>
+            <li><strong>depth_point</strong> — interior depth reference</li>
+          </ul>
+          <p>Curves trace the outer edges of each wedge between vertex pairs.</p>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

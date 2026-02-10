@@ -1,0 +1,400 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cuneimorph.github.io/schemas/specimen-metadata-v1.json",
+  "title": "Cuneimorph Specimen Metadata",
+  "description": "Standardized metadata schema for cuneiform geometric morphometric analysis. Supports both text-bearing objects (tablets, prisms, cylinders) and individual sign instances.",
+  "type": "object",
+  "required": ["specimen_id", "object_type", "annotation_level", "source", "chronology", "provenance", "annotation"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version for forward compatibility"
+    },
+    "specimen_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Unique identifier for this specimen. Convention: {archive}_{object-id}_{sign-index} for signs, {archive}_{object-id} for objects."
+    },
+    "object_type": {
+      "type": "string",
+      "enum": ["tablet", "prism", "cylinder", "envelope", "bulla", "cone", "brick", "other_carrier"],
+      "description": "Type of text-bearing object (carrier level)"
+    },
+    "annotation_level": {
+      "type": "string",
+      "enum": ["carrier", "sign"],
+      "description": "Whether this specimen represents a whole text carrier or an individual sign instance"
+    },
+
+    "source": {
+      "type": "object",
+      "description": "Image and publication source information",
+      "required": ["image_id"],
+      "properties": {
+        "image_id": {
+          "type": "string",
+          "description": "Image file identifier (without extension)"
+        },
+        "image_filename": {
+          "type": "string",
+          "description": "Original image filename with extension"
+        },
+        "publication": {
+          "type": "string",
+          "description": "Bibliographic reference for the source image (e.g., 'EP2019' for Ernst-Pradal 2019)"
+        },
+        "page_or_plate": {
+          "type": "string",
+          "description": "Page number, plate number, or figure reference in publication"
+        },
+        "database_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to online database entry (CDLI, BDTNS, HPM, etc.)"
+        },
+        "cdli_number": {
+          "type": "string",
+          "pattern": "^P[0-9]+$",
+          "description": "CDLI P-number if available"
+        },
+        "image_dpi": {
+          "type": "number",
+          "minimum": 72,
+          "description": "Image resolution in DPI"
+        }
+      }
+    },
+
+    "chronology": {
+      "type": "object",
+      "description": "Temporal classification",
+      "required": ["period_broad"],
+      "properties": {
+        "period_broad": {
+          "type": "string",
+          "enum": [
+            "ED", "OAkk", "Ur_III", "OB", "OA",
+            "MB", "MA", "LB", "NA", "NB",
+            "Achaemenid", "Seleucid", "uncertain"
+          ],
+          "description": "Broad period classification. ED=Early Dynastic, OAkk=Old Akkadian, Ur_III=Ur III, OB=Old Babylonian, OA=Old Assyrian, MB=Middle Babylonian, MA=Middle Assyrian, LB=Late Bronze, NA=Neo-Assyrian, NB=Neo-Babylonian"
+        },
+        "period_detail": {
+          "type": "string",
+          "description": "More specific period designation (e.g., 'LB IIA', 'OB early', 'NA Sargonid')"
+        },
+        "date_text": {
+          "type": "string",
+          "description": "Date as stated on the text if available (e.g., 'Šulgi 42')"
+        },
+        "date_range_start": {
+          "type": "integer",
+          "description": "Earliest possible date BCE (negative number for BCE)"
+        },
+        "date_range_end": {
+          "type": "integer",
+          "description": "Latest possible date BCE (negative number for BCE)"
+        }
+      }
+    },
+
+    "provenance": {
+      "type": "object",
+      "description": "Geographic and archaeological provenance",
+      "required": ["site"],
+      "properties": {
+        "site": {
+          "type": "string",
+          "description": "Archaeological site name (modern or ancient, e.g., 'Boghazköy', 'Ugarit', 'Nineveh')"
+        },
+        "ancient_name": {
+          "type": "string",
+          "description": "Ancient toponym (e.g., 'Hattuša', 'Ugaritica', 'Ninua')"
+        },
+        "region": {
+          "type": "string",
+          "description": "Geographic region (e.g., 'Anatolia', 'Northern Levant', 'Mesopotamia')"
+        },
+        "archive_name": {
+          "type": "string",
+          "description": "Named archive or building context (e.g., 'House of Urtenu', 'Temple of Nabu')"
+        },
+        "excavation_number": {
+          "type": "string",
+          "description": "Field excavation number if known"
+        },
+        "museum": {
+          "type": "string",
+          "description": "Current holding institution"
+        },
+        "museum_number": {
+          "type": "string",
+          "description": "Museum accession/catalog number"
+        }
+      }
+    },
+
+    "text": {
+      "type": "object",
+      "description": "Textual and philological classification",
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": ["Sumerian", "Akkadian", "Hittite", "Ugaritic", "Elamite", "Hurrian", "bilingual", "other"],
+          "description": "Primary language of the text"
+        },
+        "script_tradition": {
+          "type": "string",
+          "description": "Paleographic tradition (e.g., 'Ugarit Akkadian', 'Hattuša Akkadian', 'Assur local')"
+        },
+        "genre": {
+          "type": "string",
+          "enum": ["administrative", "legal", "letter", "literary", "ritual", "lexical", "royal_inscription", "omen", "medical", "mathematical", "other"],
+          "description": "Text genre classification"
+        },
+        "text_id": {
+          "type": "string",
+          "description": "Standard text edition reference (e.g., 'RS 15.062', 'KBo 1.1')"
+        }
+      }
+    },
+
+    "scribe": {
+      "type": "object",
+      "description": "Scribal attribution information",
+      "properties": {
+        "scribe_name": {
+          "type": "string",
+          "description": "Name of identified scribe if known"
+        },
+        "scribe_id": {
+          "type": "string",
+          "description": "Standardized scribe identifier for cross-referencing"
+        },
+        "attribution_confidence": {
+          "type": "string",
+          "enum": ["certain", "probable", "possible", "unattributed"],
+          "description": "Confidence level of scribal attribution"
+        },
+        "colophon": {
+          "type": "boolean",
+          "description": "Whether scribe is named in a colophon"
+        }
+      }
+    },
+
+    "sign_context": {
+      "type": "object",
+      "description": "Context for sign-level annotations (only when annotation_level='sign')",
+      "properties": {
+        "sign_name": {
+          "type": "string",
+          "description": "Sign name in standard notation (e.g., 'AN', 'DINGIR', 'KI')"
+        },
+        "sign_number_borger": {
+          "type": "integer",
+          "description": "Sign number in Borger MesZL"
+        },
+        "sign_number_labat": {
+          "type": "integer",
+          "description": "Sign number in Labat sign list"
+        },
+        "line_number": {
+          "type": "string",
+          "description": "Line location on tablet (e.g., 'obv. 3', 'rev. ii 12')"
+        },
+        "position_in_line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Position of sign within the line (1-indexed)"
+        },
+        "n_wedges": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "description": "Number of wedge strokes in this sign instance"
+        },
+        "wedge_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["horizontal", "vertical", "oblique_left", "oblique_right", "Winkelhaken"]
+          },
+          "description": "Types of wedges present in this sign instance"
+        }
+      }
+    },
+
+    "annotation": {
+      "type": "object",
+      "description": "Annotation session metadata",
+      "required": ["annotator", "date"],
+      "properties": {
+        "annotator": {
+          "type": "string",
+          "description": "Name or ID of the person who performed the annotation"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of annotation (ISO 8601)"
+        },
+        "tool_version": {
+          "type": "string",
+          "description": "Version of annotation tool used"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "description": "Time spent on this annotation in seconds"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Overall annotator confidence (0-1)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-text notes about annotation quality, difficulties, or observations"
+        },
+        "review_status": {
+          "type": "string",
+          "enum": ["draft", "reviewed", "validated", "flagged"],
+          "description": "Quality control status"
+        }
+      }
+    },
+
+    "morphometric_data": {
+      "type": "object",
+      "description": "The actual landmark and curve coordinate data",
+      "properties": {
+        "landmarks": {
+          "type": "object",
+          "description": "Named landmark coordinates as {name: [x, y]}",
+          "additionalProperties": {
+            "type": "array",
+            "items": {"type": "number"},
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "curves_control": {
+          "type": "object",
+          "description": "Curve control points as {curve_name: [[x,y], ...]}",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {"type": "number"},
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        "curves_pixel": {
+          "type": "object",
+          "description": "Dense curve point sampling as {curve_name: [[x,y], ...]}",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {"type": "number"},
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        "image_dimensions": {
+          "type": "object",
+          "properties": {
+            "width": {"type": "integer"},
+            "height": {"type": "integer"}
+          },
+          "description": "Dimensions of the source image in pixels"
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "minimum_record": {
+      "description": "The bare minimum fields required for a valid specimen entry",
+      "required": ["specimen_id", "object_type", "annotation_level", "source", "chronology", "provenance", "annotation"],
+      "examples": [{
+        "schema_version": "1.0.0",
+        "specimen_id": "ugarit_RS15062_sign01",
+        "object_type": "tablet",
+        "annotation_level": "sign",
+        "source": {"image_id": "img_3358"},
+        "chronology": {"period_broad": "LB"},
+        "provenance": {"site": "Ugarit"},
+        "annotation": {"annotator": "SG", "date": "2026-02-10"}
+      }]
+    },
+    "maximum_record": {
+      "description": "A fully populated specimen entry with all available information",
+      "examples": [{
+        "schema_version": "1.0.0",
+        "specimen_id": "ugarit_RS15062_sign01",
+        "object_type": "tablet",
+        "annotation_level": "sign",
+        "source": {
+          "image_id": "img_3358",
+          "image_filename": "RS15062_obv_detail.jpg",
+          "publication": "Ernst-Pradal 2019",
+          "page_or_plate": "Fig. 3",
+          "database_url": "https://cdli.mpiwg-berlin.mpg.de/artifacts/P123456",
+          "cdli_number": "P123456",
+          "image_dpi": 300
+        },
+        "chronology": {
+          "period_broad": "LB",
+          "period_detail": "LB IIA",
+          "date_text": "",
+          "date_range_start": -1350,
+          "date_range_end": -1185
+        },
+        "provenance": {
+          "site": "Ras Shamra",
+          "ancient_name": "Ugarit",
+          "region": "Northern Levant",
+          "archive_name": "House of Urtenu",
+          "excavation_number": "RS 15.062",
+          "museum": "Musee du Louvre",
+          "museum_number": "AO 12345"
+        },
+        "text": {
+          "language": "Akkadian",
+          "script_tradition": "Ugarit Akkadian",
+          "genre": "letter",
+          "text_id": "RS 15.062"
+        },
+        "scribe": {
+          "scribe_name": "Ilimilku",
+          "scribe_id": "UGARIT_ILIMILKU_01",
+          "attribution_confidence": "probable",
+          "colophon": false
+        },
+        "sign_context": {
+          "sign_name": "AN",
+          "sign_number_borger": 13,
+          "line_number": "obv. 3",
+          "position_in_line": 2,
+          "n_wedges": 4,
+          "wedge_types": ["vertical", "oblique_left", "oblique_right", "Winkelhaken"]
+        },
+        "annotation": {
+          "annotator": "SG",
+          "date": "2026-02-10",
+          "tool_version": "Cuneimorph Annotator 1.0",
+          "duration_seconds": 180,
+          "confidence": 0.92,
+          "notes": "Clear sign with well-defined wedge heads",
+          "review_status": "validated"
+        }
+      }]
+    }
+  }
+}

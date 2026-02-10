@@ -98,7 +98,7 @@ proc_site_dir <- file.path(proc_root, site); safe_mkdir(proc_site_dir)
 
 # Guard: ensure raw_site_dir is a filesystem path (not a URL) — catch wrong CLI usage early
 if (grepl("^https?://", args$raw_root, ignore.case = TRUE)) {
-  stop("The --raw_root argument looks like a URL: ", args$raw_root, 
+  stop("The --raw_root argument looks like a URL: ", args$raw_root,
        ". Provide a local path (e.g. data/raw/images).")
 }
 # normalize raw_site_dir to absolute path

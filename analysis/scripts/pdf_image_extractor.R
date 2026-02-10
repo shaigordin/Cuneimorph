@@ -200,7 +200,7 @@ write_clean_metadata_csv <- function(df, path) {
 }
 
 #' Extract images from PDF with detailed metadata
-#' 
+#'
 #' @param pdf_path Character. Path to the PDF file
 #' @param output_dir Character. Directory to save extracted images (default: current directory)
 #' @param dpi Numeric. DPI for image extraction (default: 300)
@@ -208,32 +208,32 @@ write_clean_metadata_csv <- function(df, path) {
 #' @param method Character. Extraction method: "render" (render pages) or "extract" (extract embedded images)
 #' @param text_margin Numeric. Margin in pixels for text extraction around images (default: 40)
 #' @return Data frame with image metadata
-extract_pdf_images <- function(pdf_path, 
-                               output_dir = ".", 
-                               dpi = 300, 
+extract_pdf_images <- function(pdf_path,
+                               output_dir = ".",
+                               dpi = 300,
                                format = "png",
                                method = "render",
                                text_margin = 40,
                                write_clean = TRUE) {  # <-- added write_clean
-  
+
   # Validate inputs
   if (!file.exists(pdf_path)) {
     stop("PDF file not found: ", pdf_path)
   }
-  
+
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
-  
+
   # Get PDF info
   pdf_info <- pdf_info(pdf_path)
   cat("Processing PDF:", basename(pdf_path), "\n")
   cat("Pages:", pdf_info$pages, "\n")
   cat("Method:", method, "\n\n")
-  
+
   # Initialize metadata data frame
   image_metadata <- tibble()
-  
+
   # Preload text data once
   words_by_page <- get_words_by_page(pdf_path)
   page_texts <- get_page_text(pdf_path)
@@ -246,22 +246,22 @@ extract_pdf_images <- function(pdf_path,
         pdftools::pdf_render_page(pdf_path, page = i, dpi = dpi)
       )
     }
-    
+
     # padding width so filenames sort numerically (e.g. page_001, page_010, page_100)
     pad_width <- max(3, nchar(as.character(pdf_info$pages)))
     for (i in seq_along(images)) {
       # Create filename with zero-padding
       filename <- file.path(output_dir, sprintf(paste0("page_%0", pad_width, "d.", format), i))
-      
+
       # Save image
       magick::image_write(images[[i]], filename, format = format)
-      
+
       # Get image info using magick
       img_info <- magick::image_info(images[[i]])
-      
+
       # Calculate file size
       file_size <- file.info(filename)$size
-      
+
       # Add to metadata
       associated_text <- if (length(page_texts) >= i) page_texts[[i]] else NA_character_
 
@@ -285,7 +285,7 @@ extract_pdf_images <- function(pdf_path,
         text_near_image = associated_text
       ))
     }
-    
+
   } else if (method == "extract") {
     # Method 2: Extract embedded images (centralized handling)
     temp_dir <- file.path(output_dir, "temp_extracted")
@@ -459,7 +459,7 @@ extract_pdf_images <- function(pdf_path,
       write_clean_metadata_csv(image_metadata, file.path(output_dir, "extract_metadata.csv"))
     }
   }
-  
+
   # write cleaned metadata automatically if requested
   if (isTRUE(write_clean) && nrow(image_metadata) > 0) {
     meta_fname <- switch(
@@ -470,7 +470,7 @@ extract_pdf_images <- function(pdf_path,
     )
     write_clean_metadata_csv(image_metadata, meta_fname)
   }
-  
+
   return(image_metadata)
 }
 
@@ -651,34 +651,34 @@ extract_embedded_images_preserve_dpi <- function(pdf_path, output_dir, text_marg
 }
 
 #' Display summary of extracted images
-#' 
+#'
 #' @param metadata Data frame returned by extract_pdf_images
 display_extraction_summary <- function(metadata) {
   cat("=== IMAGE EXTRACTION SUMMARY ===\n")
   cat("Total images extracted:", nrow(metadata), "\n")
   cat("Total file size:", sum(metadata$file_size_mb), "MB\n")
-  cat("Average dimensions:", 
-      round(mean(metadata$width_pixels)), "x", 
+  cat("Average dimensions:",
+      round(mean(metadata$width_pixels)), "x",
       round(mean(metadata$height_pixels)), "pixels\n")
   cat("Formats:", paste(unique(metadata$format), collapse = ", "), "\n")
   cat("DPI:", unique(metadata$dpi_x)[1], "\n\n")
-  
+
   # Display detailed table
   print(metadata %>%
-    select(filename, width_pixels, height_pixels, dpi_x, format, 
+    select(filename, width_pixels, height_pixels, dpi_x, format,
            file_size_mb, method) %>%
     arrange(filename))
 }
 
 #' Compare image quality between methods
-#' 
+#'
 #' @param metadata_list List of metadata data frames from different methods
 compare_extraction_methods <- function(metadata_list) {
   method_names <- names(metadata_list)
   if (is.null(method_names)) {
     method_names <- paste("Method", seq_along(metadata_list))
   }
-  
+
   cat("=== METHOD COMPARISON ===\n")
   for (i in seq_along(metadata_list)) {
     meta <- metadata_list[[i]]
@@ -686,8 +686,8 @@ compare_extraction_methods <- function(metadata_list) {
       cat(sprintf("%s:\n", method_names[i]))
       cat(sprintf("  Images: %d\n", nrow(meta)))
       cat(sprintf("  Avg size: %.2f MB\n", mean(meta$file_size_mb)))
-      cat(sprintf("  Avg dimensions: %dx%d\n", 
-                  round(mean(meta$width_pixels)), 
+      cat(sprintf("  Avg dimensions: %dx%d\n",
+                  round(mean(meta$width_pixels)),
                   round(mean(meta$height_pixels))))
       cat("\n")
     }
@@ -695,45 +695,45 @@ compare_extraction_methods <- function(metadata_list) {
 }
 
 #' Batch process multiple PDFs
-#' 
+#'
 #' @param pdf_directory Character. Directory containing PDF files
 #' @param output_base_dir Character. Base directory for output
 #' @param dpi Numeric. DPI for extraction
 #' @param method Character. Extraction method
 #' @return List of metadata data frames
-batch_extract_pdfs <- function(pdf_directory, 
-                               output_base_dir = "batch_extracted", 
-                               dpi = 300, 
+batch_extract_pdfs <- function(pdf_directory,
+                               output_base_dir = "batch_extracted",
+                               dpi = 300,
                                method = "render") {
-  
+
   # Find all PDF files
-  pdf_files <- list.files(pdf_directory, pattern = "\\.pdf$", 
+  pdf_files <- list.files(pdf_directory, pattern = "\\.pdf$",
                          full.names = TRUE, ignore.case = TRUE)
-  
+
   if (length(pdf_files) == 0) {
     stop("No PDF files found in directory: ", pdf_directory)
   }
-  
+
   cat("Found", length(pdf_files), "PDF files to process\n\n")
-  
+
   # Create base output directory
   if (!dir.exists(output_base_dir)) {
     dir.create(output_base_dir, recursive = TRUE)
   }
-  
+
   # Initialize results list
   all_metadata <- list()
-  
+
   # Process each PDF
   for (i in seq_along(pdf_files)) {
     pdf_file <- pdf_files[i]
     pdf_name <- tools::file_path_sans_ext(basename(pdf_file))
-    
+
     cat(sprintf("Processing %d/%d: %s\n", i, length(pdf_files), pdf_name))
-    
+
     # Create individual output directory
     output_dir <- file.path(output_base_dir, pdf_name)
-    
+
     tryCatch({
       # Extract images
       metadata <- extract_pdf_images(
@@ -742,50 +742,50 @@ batch_extract_pdfs <- function(pdf_directory,
         dpi = dpi,
         method = method
       )
-      
+
       # Add PDF filename to metadata
       metadata$pdf_file <- pdf_name
-      
+
       # Store in results
       all_metadata[[pdf_name]] <- metadata
-      
+
       cat(sprintf("  Extracted %d images\n", nrow(metadata)))
-      
+
     }, error = function(e) {
       cat(sprintf("  ERROR: %s\n", e$message))
       all_metadata[[pdf_name]] <- tibble()
     })
-    
+
     cat("\n")
   }
-  
+
   # Combine all metadata
   combined_metadata <- bind_rows(all_metadata, .id = "pdf_source")
-  
+
   # Save combined metadata
   metadata_file <- file.path(output_base_dir, "batch_extraction_metadata.csv")
   write_clean_metadata_csv(combined_metadata, metadata_file)
-  
+
   cat(sprintf("Batch processing complete!\n"))
   cat(sprintf("Combined metadata saved to: %s\n", metadata_file))
   cat(sprintf("Total images extracted: %d\n", nrow(combined_metadata)))
-  
+
   return(all_metadata)
 }
 
 #' Generate extraction report
-#' 
+#'
 #' @param metadata Data frame with extraction metadata
 #' @param output_file Character. Path for HTML report (optional)
 generate_extraction_report <- function(metadata, output_file = NULL) {
-  
+
   # Calculate summary statistics
   total_images <- nrow(metadata)
   total_size_mb <- sum(metadata$file_size_mb)
   avg_width <- round(mean(metadata$width_pixels))
   avg_height <- round(mean(metadata$height_pixels))
   formats <- paste(unique(metadata$format), collapse = ", ")
-  
+
   # Create report text
   report <- sprintf("
 # PDF Image Extraction Report
@@ -821,16 +821,16 @@ Generated: %s
     metadata$filename[which.max(metadata$file_size_mb)],
     median(metadata$file_size_mb)
   )
-  
+
   # Print to console
   cat(report)
-  
+
   # Optionally save to file
   if (!is.null(output_file)) {
     writeLines(report, output_file)
     cat(sprintf("\nReport saved to: %s\n", output_file))
   }
-  
+
   # Return detailed table
   return(metadata %>%
     select(filename, width_pixels, height_pixels, file_size_mb, format, method) %>%
@@ -852,11 +852,11 @@ output_directory <- "/Users/shaigordin/Dropbox/Git-projects/Cuneimorph/data/raw/
 if (isTRUE(RUN_DEMOS)) {
   cat("EXAMPLE 1: Single PDF extraction (render method)\n")
   cat("Replace 'sample_document.pdf' with your PDF file path\n\n")
-  
+
   metadata_render <- NULL
   metadata_extract <- NULL
   metadata_preserve_dpi <- NULL
-  
+
   if (file.exists(example_pdf)) {
     # Extract using render method
     cat("Extracting images by rendering pages...\n")
@@ -878,11 +878,11 @@ if (isTRUE(RUN_DEMOS)) {
   } else {
     cat("Sample PDF not found. Please update the 'example_pdf' variable with your PDF path.\n\n")
   }
-  
+
   # Demonstration 2: Extract embedded images (if pdfimages available)
   cat("EXAMPLE 2: Extract embedded images (requires poppler-utils)\n")
   pdfimages_available <- has_pdfimages()
-  
+
   if (file.exists(example_pdf) && pdfimages_available) {
     cat("pdfimages found - extracting embedded images...\n")
     metadata_extract <- extract_pdf_images(
@@ -912,7 +912,7 @@ if (isTRUE(RUN_DEMOS)) {
     cat("  macOS: brew install poppler\n")
     cat("  Windows: Download from https://poppler.freedesktop.org/\n\n")
   }
-  
+
   # Demonstration 3: Extract embedded images preserving original DPI
   cat("EXAMPLE 3: Extract embedded images preserving original DPI\n")
   # Ensure the flag exists even if this block runs alone
@@ -934,26 +934,26 @@ if (isTRUE(RUN_DEMOS)) {
   } else {
     cat("Sample PDF not found. Please update the 'example_pdf' variable with your PDF path.\n\n")
   }
-  
+
   # Demonstration 4: Batch processing
   cat("EXAMPLE 4: Batch processing multiple PDFs\n")
   pdf_folder <- "pdf_documents"  # Replace with your folder path
-  
+
   if (dir.exists(pdf_folder)) {
     cat("Processing all PDFs in folder:", pdf_folder, "\n")
-    
+
     batch_results <- batch_extract_pdfs(
       pdf_directory = pdf_folder,
       output_base_dir = "batch_output",
       dpi = 300,
       method = "render"
     )
-    
+
     # Display batch summary
     total_pdfs <- length(batch_results)
     total_images <- sum(sapply(batch_results, nrow))
     cat(sprintf("Batch complete: %d PDFs processed, %d images extracted\n", total_pdfs, total_images))
-    
+
   } else {
     cat("Create a 'pdf_documents' folder with PDF files to test batch processing.\n")
   }

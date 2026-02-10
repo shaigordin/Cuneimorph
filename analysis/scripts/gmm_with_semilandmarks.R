@@ -122,17 +122,24 @@ cat("Combined coordinate array created: dim =", dim(combined_coords), "\n\n")
 # ============================================================================
 
 # Tell geomorph which landmarks are semilandmarks on curves
-# Format: matrix with start and end indices for each curve
-curves_matrix <- matrix(NA, nrow = n_curves, ncol = N_SEMILANDMARKS_PER_CURVE)
+# gpagen expects `curves` as an m x 3 matrix: start_index, end_index, curve_type
+# where curve_type is 1 for open curves (or 0 for closed). We'll construct that.
+start_indices <- integer(n_curves)
+end_indices <- integer(n_curves)
 
 current_idx <- n_fixed + 1
 for (curve_idx in 1:n_curves) {
   end_idx <- current_idx + N_SEMILANDMARKS_PER_CURVE - 1
-  curves_matrix[curve_idx, ] <- current_idx:end_idx
+  start_indices[curve_idx] <- current_idx
+  end_indices[curve_idx] <- end_idx
   current_idx <- end_idx + 1
 }
 
-cat("Curve indices for geomorph:\n")
+# Use 1 for open curves (adjust if some curves are closed)
+curve_type <- rep(1, n_curves)
+curves_matrix <- cbind(start_indices, end_indices, curve_type)
+
+cat("Curve indices for geomorph (start, end, type):\n")
 print(curves_matrix)
 cat("\n")
 
@@ -165,9 +172,18 @@ cat("\n")
 
 cat("Creating visualizations...\n")
 
-# Plot 1: PCA
+# Plot 1: PCA (custom scatter with legend)
 pdf(file.path(output_dir, "pca_with_semilandmarks.pdf"), width = 10, height = 8)
-plot(pca_full, main = "PCA with Fixed Landmarks + Semilandmarks")
+pcx <- pca_full$x[,1]
+pcy <- pca_full$x[,2]
+cols <- rep("#2b8cbe", n_spec)
+pch_vals <- rep(19, n_spec)
+plot(pcx, pcy, pch = pch_vals, col = cols,
+  xlab = paste0("PC1 (", round(var_explained[1]*100,1), "%)"),
+  ylab = paste0("PC2 (", round(var_explained[2]*100,1), "%)"),
+  main = "PCA with Fixed Landmarks + Semilandmarks")
+text(pcx, pcy, labels = specimen_names, pos = 3, cex = 0.7)
+legend("topright", legend = "Specimens", pch = 19, col = "#2b8cbe", bg = "white")
 dev.off()
 cat("  - PCA plot saved\n")
 
@@ -221,9 +237,10 @@ for (i in 1:min(n_spec, 4)) {
          coords[(n_fixed+1):n_total_landmarks, 2],
          pch = 19, col = "blue", cex = 0.8)
 
-  legend("topright",
-         legend = c("Fixed landmarks", "Semilandmarks"),
-         col = c("red", "blue"), pch = 19, cex = 0.8)
+    legend("topright",
+      legend = c("Fixed landmarks", "Semilandmarks"),
+      col = c("red", "blue"), pch = 19, pt.cex = c(1.4, 0.9), cex = 0.8,
+      bg = "white")
 }
 
 dev.off()

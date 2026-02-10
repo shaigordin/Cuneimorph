@@ -109,6 +109,11 @@ plot_sign_with_curves <- function(specimen_idx, landmarks, curves, gpa, pca,
   # Plot landmarks
   points(lm[, 1], lm[, 2], pch = 19, col = "red", cex = 1.5)
 
+  # Ensure curves are visible in legend by drawing a short sample line
+  segments_x <- mean(range(all_x, na.rm = TRUE))
+  segments_y <- mean(range(all_y, na.rm = TRUE))
+  lines(c(segments_x, segments_x + 1), c(segments_y, segments_y), col = "gray70", lwd = 2)
+
   # Add landmark labels if requested
   if (show_labels && !is.null(rownames(lm))) {
     text(lm[, 1], lm[, 2], labels = rownames(lm),
@@ -124,10 +129,19 @@ plot_sign_with_curves <- function(specimen_idx, landmarks, curves, gpa, pca,
                      "PC1: ", pc1_score, " | PC2: ", pc2_score, " | CSize: ", csize),
         cex.main = 0.9)
 
-  # Add legend
-  legend("topright", legend = c("Landmarks", "Curves"),
-         col = c("red", "gray70"), pch = c(19, NA), lty = c(NA, 1),
-         lwd = c(NA, 2), cex = 0.7, bg = "white")
+    # Add legend inside the plotting region
+    par(xpd = NA)
+    legend("topright",
+      legend = c("Landmarks", "Curves"),
+      col = c("red", "gray70"),
+      pch = c(19, NA),
+      lty = c(NA, 1),
+      lwd = c(NA, 2),
+      pt.cex = c(1.25, NA),
+      cex = 0.8,
+      bg = "white",
+      inset = 0.02)
+    par(xpd = FALSE)
 }
 
 # ============================================================================
@@ -167,6 +181,16 @@ for (i in 1:n_spec) {
                        specimen_names[i], show_labels = FALSE)
 }
 
+# Add a single global legend for the comparison PDF
+op <- par(no.readonly = TRUE)
+par(fig = c(0,1,0,1), oma = c(0,0,0,0), mar = c(0,0,0,0), new = TRUE)
+plot.new()
+legend("topright",
+  legend = c("Landmarks", "Curves"),
+  col = c("red", "gray70"), pch = c(19, NA), lty = c(NA, 1),
+  lwd = c(NA, 2), pt.cex = 1.1, cex = 0.9, bg = "white", inset = 0.02)
+par(op)
+
 dev.off()
 
 # ============================================================================
@@ -204,15 +228,15 @@ pdf(file.path(output_dir, "shape_variation_all.pdf"),
 par(mfrow = c(n_spec, 3))
 
 for (i in 1:n_spec) {
-  # Plot 1: Consensus shape
-  plot(consensus, pch = 19, col = "blue", asp = 1,
-       main = paste(specimen_names[i], "- Consensus"),
-       xlab = "", ylab = "")
+    # Plot 1: Consensus shape
+    plot(consensus, pch = 19, col = "blue",
+      main = paste(specimen_names[i], "- Consensus"),
+      xlab = "", ylab = "")
 
-  # Plot 2: Target shape
-  plot(gpa$coords[, , i], pch = 19, col = "red", asp = 1,
-       main = paste(specimen_names[i], "- Target"),
-       xlab = "", ylab = "")
+    # Plot 2: Target shape
+    plot(gpa$coords[, , i], pch = 19, col = "red",
+      main = paste(specimen_names[i], "- Target"),
+      xlab = "", ylab = "")
 
   # Plot 3: TPS deformation
   plotRefToTarget(consensus, gpa$coords[, , i],

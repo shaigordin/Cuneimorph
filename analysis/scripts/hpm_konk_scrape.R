@@ -21,7 +21,7 @@ library(purrr)
 get_form_fields_and_prompt <- function(form_url) {
   doc <- read_html(form_url)
   form <- html_node(doc, "form")
-  
+
   # Inputs (text, hidden, checkbox, radio, etc.)
   inputs <- html_nodes(form, "input")
   input_df <- tibble::tibble(
@@ -29,7 +29,7 @@ get_form_fields_and_prompt <- function(form_url) {
     type = html_attr(inputs, "type"),
     value = html_attr(inputs, "value")
   ) %>% dplyr::filter(!is.na(name))
-  
+
   # Selects
   selects <- html_nodes(form, "select")
   select_df <- tibble::tibble(
@@ -37,17 +37,17 @@ get_form_fields_and_prompt <- function(form_url) {
     options = purrr::map(selects, ~html_nodes(.x, "option") %>% html_attr("value")),
     labels = purrr::map(selects, ~html_nodes(.x, "option") %>% html_text(trim=TRUE))
   )
-  
+
   # Textareas
   textareas <- html_nodes(form, "textarea")
   textarea_df <- tibble::tibble(
     name = html_attr(textareas, "name")
   )
-  
+
   # Prompt user for each field
   cat("Enter your search criteria for the Hethiter Konkordanz form.\n(Leave blank to skip a field)\n")
   user_choices <- list()
-  
+
   # Text/hidden inputs (skip submit/reset/button)
   for (i in seq_len(nrow(input_df))) {
     nm <- input_df$name[i]
@@ -65,7 +65,7 @@ get_form_fields_and_prompt <- function(form_url) {
       user_choices[[nm]] <- ans
     }
   }
-  
+
   # Selects
   for (i in seq_len(nrow(select_df))) {
     nm <- select_df$name[i]
@@ -83,14 +83,14 @@ get_form_fields_and_prompt <- function(form_url) {
       }
     }
   }
-  
+
   # Textareas
   for (i in seq_len(nrow(textarea_df))) {
     nm <- textarea_df$name[i]
     ans <- readline(sprintf("%s (textarea): ", nm))
     user_choices[[nm]] <- ans
   }
-  
+
   user_choices
 }
 
@@ -247,43 +247,43 @@ clean_konkordanz_df <- function(df) {
     ) %>%
     tidyr::fill(Inventarnummer, CTH) %>%
     mutate(across(everything(), str_trim))
-  
+
   # Clean Publikation
   df$Publikation <- sapply(df$Publikation, clean_publikation)
-  
+
   # Split Publikation links (from extracted links)
   df <- df %>%
     mutate(
       Publikation_link = ifelse(is.na(Publikation_links), NA, Publikation_links)
     )
-  
+
   # Clean Joins and Image_link columns (use extracted links)
   df <- df %>%
     mutate(
       Joins_links = ifelse(is.na(Joins_links), "", Joins_links),
       Image_link_url = ifelse(is.na(Image_link_links), NA, Image_link_links)
     )
-  
+
   # CTH: separate number and link (from extracted links)
   df <- df %>%
     mutate(
       CTH_num = str_extract(CTH, "^[0-9]+"),
       CTH_link = ifelse(is.na(CTH_links), NA, CTH_links)
     )
-  
+
   # Fundort: split before/after colon
   df <- df %>%
     mutate(
       Fundort_room = str_trim(str_extract(Fundort, "^[^:]+")),
       Fundort_details = str_trim(str_replace(Fundort, "^[^:]+:", ""))
     )
-  
+
   # TLHdig: clean link (from extracted links)
   df <- df %>%
     mutate(
       TLHdig_link = ifelse(is.na(TLHdig_links), NA, TLHdig_links)
     )
-  
+
   df
 }
 
